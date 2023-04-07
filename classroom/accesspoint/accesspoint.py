@@ -11,7 +11,7 @@ onboard = Pin( 'LED', Pin.OUT, value=0 )
 
 ssid     = secret.SSID
 password = secret.PASSWORD
-channel  = 3
+channel  = secret.CHANNEL
 uname    = ""
 
 html = """<!DOCTYPE html>
