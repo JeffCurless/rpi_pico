@@ -10,7 +10,7 @@ import struct
 class NTPTime:
     def __init__( self, host ):
         self.ntpHost = host
-        self.NTP_DELTA = 2208988800
+        self.TIME1970 = 2208988800
         
     def getTime(self):
         NTP_QUERY = bytearray(48)
@@ -27,7 +27,7 @@ class NTPTime:
         # Unpack network (big-endian) into an unsigned integer
         #
         value = struct.unpack("!I", message[40:44])[0]
-        t = value - self.NTP_DELTA
+        t = value - self.TIME1970
         tm = time.gmtime(t)
         return tm
     

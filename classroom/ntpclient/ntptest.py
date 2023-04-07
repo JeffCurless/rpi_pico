@@ -44,6 +44,7 @@ currentHour = 24
 
 ntp = NTPTime( host )
 
+
 try:
     
     while True:
