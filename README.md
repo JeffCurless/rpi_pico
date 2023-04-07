@@ -11,4 +11,12 @@ Collection of programs for the Raspberry Pi Pico/PicoW
 
 >A simple test program that generates a connection to the access point and verifies data transfers
 
+## ntpclient
 
+**ntpclient.py**
+
+>A Class that obtains the time from a network time server, if there is an already established network connection.
+
+**ntptest.py**
+
+>A simgple test program to test ntpclient code.
