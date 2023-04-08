@@ -20,3 +20,13 @@ Collection of programs for the Raspberry Pi Pico/PicoW
 **ntptest.py**
 
 >A simgple test program to test ntpclient code.
+
+## chatGPT
+
+**chatgpt.py**
+
+> A class that communicates with chatGPT.  This assumes there is an already established network.  
+
+**chattest.py**
+
+> A small tests program that helps test the chatGPT object.
