@@ -30,9 +30,10 @@ else:
     print( 'ip = ' + status[0] )
 
 
-chat = chatGPT( apikey.KEY, 200 )
-chat.askQuestion( "describe large cavern with doors east and west, tunnel to the south and large open pit" )
+chat = chatGPT( apikey.KEY, 2048 )
+answer = chat.askQuestion( "In the style of a sherlock holmes story, write a chapter about a new case" )
 
+print( answer )
 wlan.disconnect()
 
     
