@@ -34,13 +34,13 @@ A small tests program that helps test the chatGPT object.
 
 ## Badge
 
-++badge.py++
+**badge.py**
 
 Is a small app that updates an inky eInk display from Pimoroni.  The code simply displays image /user/user.jpg, and then starts showing panels from /panels/ starting with panel1.jpg, and continues on until there are no more panel##.jpg files.  When this occurs it goes back to the original user.  This code is being used for a badge for my CTE ambassadors at school.  Each student ambassador has a badge, and it rotates betweehn their name and some information about the school etc.
 
 ## prange
 
-++prange.py++
+**prange.py**
 
 A simple iterator class.  In the file is also a function isprime, that uses the prange iterator to determine if the number is prime or not.  While this iterator is not the best mechansim, as it has very large memory reuirements for very large numbers it does show how an iterator can work, and was used in a class discussing for loops and how we calculate prime numbers.
 
