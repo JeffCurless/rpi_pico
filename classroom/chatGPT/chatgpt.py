@@ -37,5 +37,6 @@ class chatGPT:
             print("Success")
             response_data = json.loads(r.text)
             completion = response_data["choices"][0]["text"]
-            print( completion )
         r.close()
+        
+        return completion
