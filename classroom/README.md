@@ -1,6 +1,6 @@
 # Access Point
 
-**accesspoint.py**i
+**accesspoint.py**
 
 Contains a simple project that generates an access point, and webserver.  The access point will act as a DHCP server so it can give out network addresses in an environment where there is no other network access, or network access to the internet is restricted.
 
