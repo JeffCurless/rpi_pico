@@ -37,3 +37,9 @@ A small tests program that helps test the chatGPT object.
 **prange.py**
 
 A simple iterator class.  In the file is also a function isprime, that uses the prange iterator to determine if the number is prime or not.  While this iterator is not the best mechansim, as it has very large memory reuirements for very large numbers it does show how an iterator can work, and was used in a class discussing for loops and how we calculate prime numbers.
+
+## tictactoe
+**tictactoe.py**
+
+A simple tictactoe program for the pico with a pico_display.  Could be ported over to any python environment.  One suggestion for porting would be to convert the graphics over to text displays, and instead of button moves, simply have the player select a number for a blank spot on the board.
+
