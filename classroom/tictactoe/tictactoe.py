@@ -21,12 +21,6 @@ computerToken   = 'X'
 playerToken     = 'O'
 emptyToken      = ''
 scaleFactor     = 2
-#
-# List of all winning moves as strings... so we can search quickly
-#
-winningMoves = [[0,1,2],[3,4,5],[6,7,8],
-                [0,3,6],[1,4,7],[2,5,8],
-                [0,4,8],[2,4,6]]
 
 #
 # Cell class.  A cell is a single component of the TicTacToe board.  The class contains the
@@ -115,11 +109,24 @@ class Board:
             Initialize the Board Class.  This takes the width of the board are on the
             screen.  This area is then broken down into the cells for each square a
             player can move in.  Also stored are the winning move and winning token.
+            
+            Parameters:
+                width        - The total width of the board.
+                
+            Members:
+                width        - How wide the board is
+                cells        - An array of class Cell, each entry representing a square on the board
+                selector     - The location of the current cell the user can select for a turn
+                cwidth       - Width of a cell (yes it is just 1/3 of width, but this makes is easier
+                winToken     - The winning token, i.e. who one the game
+                winMove      - The winning move (the row info)
+                winningMoves - A list of all possible winning moves, used to detect if there is
+                               a winner yet.  Could also be used to help the computer plan moves...
         """
-        self.width = width
-        self.cells = []
+        self.width    = width
+        self.cells    = []
         self.selector = 0
-        self.cwidth = width // 3
+        self.cwidth   = width // 3
         self.winToken = emptyToken
         self.winMove  = []
         x = 0
@@ -130,6 +137,20 @@ class Board:
             if ((i+1) % 3) == 0:
                 x = 0
                 y += self.cwidth
+        self.winningMoves = [[0,1,2],[3,4,5],[6,7,8],
+                             [0,3,6],[1,4,7],[2,5,8],
+                             [0,4,8],[2,4,6]]
+    
+    def reset( self ):
+        """
+            Reset the board back to the beginning
+        """
+        for cell in self.cells:
+            cell.setToken( emptyToken )
+        self.winToken = emptyToken
+        self.winMove  = []
+        self.selector = 0
+        
         
     def getCell( self, cellNum ):
         """
@@ -188,7 +209,7 @@ class Board:
         display.line(startx, starty, startx,stopy, offset)
         display.line(startx, stopy,  stopx, stopy, offset)
     
-    def displayWinner( self ):
+    def displayWinningMove( self ):
         """
             Display the winning move!  This is done by taking the winning move as stored
             on the board, and dring from the center of the first cell, to the center of
@@ -208,7 +229,7 @@ class Board:
             the computer and the player
         """
         winner = False
-        for move in winningMoves:
+        for move in self.winningMoves:
             if ((self.getCellToken( move[0] ) == token) and
                 (self.getCellToken( move[1] ) == token)  and
                 (self.getCellToken( move[2] ) == token)):
@@ -258,6 +279,27 @@ class Board:
             movesAvailable = True
         return movesAvailable
     
+    def displayWinner(self):
+        """
+            Display who won!
+        """
+        textx = 0
+        texty = WIDTH+(8*scaleFactor)
+
+        display.set_pen( penGrid )
+        display.set_font( "bitmap8" )
+        if self.winToken == emptyToken:
+            message = "It's a Tie!"
+        elif board.winToken == computerToken:
+            message = "You Lose!"
+        else:
+            message = "You win!"
+
+        width = display.measure_text( message, scaleFactor )
+        textx = (WIDTH - width)//2
+        display.text( message, textx, texty, WIDTH, scale=scaleFactor )
+        display.update()
+    
     def paint( self ):
         """
             Paint the board on the screen, we paint the hash grid, then the board cells, then
@@ -280,97 +322,123 @@ class Board:
                 self.drawToken( cell )
     
         if self.winMove != []:
-            self.displayWinner()
+            self.displayWinningMove()
         else:
             self.showSelector()
         display.update()
 
-def randomMove( token ):
-    """
-        Generate a random move when we have no good choice to make.  Do this by
-        generating a list of the empty cell locations, and then select one at
-        random.
-    """
-    cells = board.getEmptyCells()
-    if len(cells) > 0:
-        location = random.randrange(len(cells))
-        board.setCellToken( cells[location], token )
+#
+#
+#
+class MoveAI:
+    def __init__(self,board):
+        """
+            Initialize the movement AI, this code will predict movement of the player, and
+            move to activly block them.  The end result is the computer will never lose a
+            game, it may tie, but not lose
+        """
+        self.board    = board
+        self.patterns = []
+    
+    def randomMove( self, token ):
+        """
+            Generate a random move when we have no good choice to make.  Do this by
+            generating a list of the empty cell locations, and then select one at
+            random.
+        """
+        cells = self.board.getEmptyCells()
+        if len(cells) > 0:
+            location = random.randrange(len(cells))
+            self.board.setCellToken( cells[location], token )
 
-def computerMove():
-    """
-        Allow the computer to move.  This routine should be where we add in the AI logic
-        to automatically select the best move based on what we currently see on the board.
+    def computerMove(self):
+        """
+            Allow the computer to move.  This routine should be where we add in the AI logic
+            to automatically select the best move based on what we currently see on the board.
         
-        The intent here is that we can utilize the winningMoves list looking for a weighted
-        solution that provides the best move based on all possible moves.
+            The intent here is that we can utilize the winningMoves list looking for a weighted
+            solution that provides the best move based on all possible moves.
         
-        Most Important:
+            Most Important:
         
-        We simply select a random location from the currently empty locations...
-    """
-    randomMove( computerToken )
-    board.paint()
+            We simply select a random location from the currently empty locations...
+        """
+        self.randomMove( computerToken )
+        self.board.paint()
 
+def printMessage( yOffset, message ):
+    """
+        Display a message, centered along X
+    """
+    width = display.measure_text( message, scaleFactor )
+    textx = (WIDTH - width)//2
+    texty = WIDTH + yOffset
+    display.text( message, textx, texty, WIDTH, scale=scaleFactor )
+    display.update()
 #
 # Create the board to fit the display
 #
 board = Board(WIDTH)
+move  = MoveAI(board)
 
 #
 # Main loop... Depending on the button pressed, perform the action.  First things first, let the
 # computer (X) make the first move
 #
-computerMove()
 
-playerMoved = False
-haveWinner  = False
-while not haveWinner:
-    if button_a.read():
-        cell = board.getSelectedCell()
-        if cell.isEmpty():
-            board.setCellToken( cell.getIndex(), playerToken )
-            board.paint()
-            playerMoved = True
-    elif button_b.read():
-        print( "Button B pressed" )
-    elif button_x.read():
-        board.incSelector()
-        board.paint()
-    elif button_y.read():
-        board.decSelector()
-        board.paint()
-    
-    if playerMoved:
-        if board.checkForWinner( playerToken ):
-            board.paint()
-            haveWinner = True
-        else:
-            computerMove()
-            if board.checkForWinner( computerToken ):
+def main():
+    while True:
+        board.reset()
+        move.computerMove()
+
+        playerMoved = False
+        haveWinner  = False
+        while not haveWinner:
+            if button_a.read():
+                cell = board.getSelectedCell()
+                if cell.isEmpty():
+                    board.setCellToken( cell.getIndex(), playerToken )
+                    board.paint()
+                    playerMoved = True
+            elif button_x.read():
+                board.incSelector()
                 board.paint()
-                haveWinner = True
-            elif not board.movesExist():
-                haveWinner = True
-            playerMoved = False
+            elif button_y.read():
+                board.decSelector()
+                board.paint()
+    
+            if playerMoved:
+                if board.checkForWinner( playerToken ):
+                    board.paint()
+                    haveWinner = True
+                else:
+                    move.computerMove()
+                    if board.checkForWinner( computerToken ):
+                        board.paint()
+                        haveWinner = True
+                    elif not board.movesExist():
+                        haveWinner = True
+                    playerMoved = False
         
-    time.sleep(0.1)
+            time.sleep(0.1)
+        #
+        # Display who won!
+        #
+        board.displayWinner()
+        
+        #
+        #
+        #
+        printMessage( 48, "Press B to" )
+        printMessage( 62, "continue..." )
+        
+        waitForContinue = False
+        while( waitForContinue == False ):
+            if button_b.read():
+                waitForContinue = True
+            time.sleep(0.1)
 
 #
-# Display who won!
 #
-textx = 0
-texty = WIDTH+(8*scaleFactor)
-
-display.set_pen( penGrid )
-display.set_font( "bitmap8" )
-if board.winToken == emptyToken:
-    message = "It's a Tie!"
-elif board.winToken == computerToken:
-    message = "You Lose!"
-else:
-    message = "You win!"
-
-width = display.measure_text( message, scaleFactor )
-textx = (WIDTH - width)//2
-display.text( message, textx, texty, WIDTH, scale=scaleFactor )
-display.update()
+#
+main()
