@@ -328,7 +328,9 @@ class Board:
         display.update()
 
 #
-#
+# MoveAI - The Movement class for the computer.  This will contain all of the required code to handle
+# selecting a move (or series of moves) that will keep the computer from losing.  Note a tie is not
+# considered a loss.
 #
 class MoveAI:
     def __init__(self,board):
@@ -366,6 +368,9 @@ class MoveAI:
         self.randomMove( computerToken )
         self.board.paint()
 
+#
+# Display a message on screen, at the y offset, centered
+#
 def printMessage( yOffset, message ):
     """
         Display a message, centered along X
@@ -385,7 +390,6 @@ move  = MoveAI(board)
 # Main loop... Depending on the button pressed, perform the action.  First things first, let the
 # computer (X) make the first move
 #
-
 def main():
     while True:
         board.reset()
@@ -427,7 +431,7 @@ def main():
         board.displayWinner()
         
         #
-        #
+        # Display a message for the user to continue
         #
         printMessage( 48, "Press B to" )
         printMessage( 62, "continue..." )
@@ -439,6 +443,6 @@ def main():
             time.sleep(0.1)
 
 #
-#
+# The main application
 #
 main()
