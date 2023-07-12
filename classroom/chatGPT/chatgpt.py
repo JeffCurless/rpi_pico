@@ -1,12 +1,11 @@
 import json
-import network
 import time
 import urequests
 
 
 class chatGPT:
     """
-        Description: This is a function to hit chat gpt API and get a
+        Description: This is a function to access the chatGPT API and get a
         response.
         
         Parameters:
