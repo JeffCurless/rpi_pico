@@ -658,6 +658,7 @@ if debugTest:
 # computer (X) make the first move
 #
 def main():
+    print("New Game:")
     while True:
         board.reset()
         move.computerMove()
