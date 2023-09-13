@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import os
 import time
 import shutil
@@ -6,12 +7,12 @@ import argparse
 #
 # Setup arguments so we can determine where the version if PICO firmware we want is...
 #
-parser = argparse.ArgumentParser( description='PICO Flasher' )
-parser.add_argument( 'uf2_file_path',  metavar="UF2_FILE", type=str, help='Path to the UF2 file')
+parser = argparse.ArgumentParser( prog='pico_flash', description="Program to update firmware on multiple PICO's." )
+parser.add_argument( '-d', '--uf2', help='Path to the firmware file in UF2 format', required=True)
+
 
 args = parser.parse_args()
-
-uf2_file_path = args.uf2_file_path
+uf2_file_path = args.uf2
 
 def find_pico_device():
     """
@@ -51,5 +52,5 @@ while True:
             print( '    Error: UF2 file not found.  Please check the file location.' )
     else:
         print( 'Searching for PICO...' )
-
     time.sleep(5)
+
