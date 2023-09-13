@@ -8,7 +8,7 @@ import argparse
 # Setup arguments so we can determine where the version if PICO firmware we want is...
 #
 parser = argparse.ArgumentParser( prog='pico_flash', description="Program to update firmware on multiple PICO's." )
-parser.add_argument( '-d', '--uf2', help='Path to the firmware file in UF2 format')
+parser.add_argument( '-d', '--uf2', help='Path to the firmware file in UF2 format', required=True)
 
 
 args = parser.parse_args()
@@ -35,27 +35,22 @@ def find_pico_device():
 
     return output.strip()
 
-if uf2_file_path is None:
-    print( "\n\nError: Missing firmware file to flash to PICO's.\n\n")
-    parser.parse_args(['-h'])
-else:
-    print( "Press Ctrl-C to exit - DO NOT TERMINATE while transfer is in progress!")
+print( "Press Ctrl-C to exit - DO NOT TERMINATE while transfer is in progress!")
 
-    while True:
-        device = find_pico_device()
-        if os.path.exists( device ):
-            print( 'PICO detected on ' + device )
-            try:
-                print( '    Writing firmware do not terminate!' )
-                shutil.copy2(uf2_file_path, device )
-                print( '    Firmware installed - Rebooting PICO' )
-                time.sleep(2)
-            except PermissionError:
-                print( '    Permission Error:  Unable to copy firmware to PICO.  Please reconnect the PICO and try again.' )
-            except FileNotFoundError:
-                print( '    Error: UF2 file not found.  Please check the file location.' )
-        else:
-            print( 'Searching for PICO...' )
-
-        time.sleep(5)
+while True:
+    device = find_pico_device()
+    if os.path.exists( device ):
+        print( 'PICO detected on ' + device )
+        try:
+            print( '    Writing firmware do not terminate!' )
+            shutil.copy2(uf2_file_path, device )
+            print( '    Firmware installed - Rebooting PICO' )
+            time.sleep(2)
+        except PermissionError:
+            print( '    Permission Error:  Unable to copy firmware to PICO.  Please reconnect the PICO and try again.' )
+        except FileNotFoundError:
+            print( '    Error: UF2 file not found.  Please check the file location.' )
+    else:
+        print( 'Searching for PICO...' )
+    time.sleep(5)
 
