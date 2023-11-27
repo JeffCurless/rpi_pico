@@ -1,6 +1,7 @@
 import time
 import random
 
+from command import *
 from pimoroni import Button
 from pimoroni import RGBLED
 from picographics import PicoGraphics, DISPLAY_PICO_DISPLAY, PEN_P8
@@ -15,6 +16,7 @@ WEST  = 3
 debugDraw  = False
 debugKarel = True
 debugBall  = True
+debugWhile = False
 
 BETWEEN  = 15  # 21,22 are good
 START    = BETWEEN//2
@@ -27,6 +29,7 @@ button_x = Button(14)
 button_y = Button(15)
 
 led.set_rgb(0,0,0)
+
 #
 # Karel Class... Karel is a dog that wanders around the room, based on how he is programmed.
 #
@@ -60,14 +63,21 @@ class Karel:
         elif self.direction == WEST:
             self.canMove( self.x-BETWEEN, self.y )
         if debugKarel:
-            print( "D: %d (%3d,%3d)" % (self.direction,self.x, self.y) )
+            print( "K: %d (%3d,%3d)" % (self.direction,self.x, self.y) )
             
     def turnRight(self):
         self.direction = self.direction + 1
         if self.direction > WEST:
-            self.direction = 0
+            self.direction = NORTH 
         if debugKarel:
-            print( "D: %d (%3d,%3d)" % (self.direction,self.x, self.y))
+            print( "K: %d (%3d,%3d)" % (self.direction,self.x, self.y))
+            
+    def turnLeft(self):
+        self.direction = self.direction - 1
+        if self.direction < NORTH:
+            self.direction = WEST
+        if debugKarel:
+            print( "K: %d (%3d,%3d)" % (self.direction,self.x, self.y))
 
 #
 # Ball - Sometimes Karel likes to play with a ball!
@@ -92,7 +102,13 @@ class World:
         self.ballpen    = self.display.create_pen( 255,255, 0 )
         self.karel      = karel
         self.balls      = []
+        self.program    = []
         
+        #
+        # Make Karel's world a square...
+        #
+        self.height = self.width
+                
         self.karel.setup( self.width, self.height )
         self.display.set_pen( self.background )
         self.display.clear()
@@ -137,13 +153,13 @@ class World:
             y3 = self.karel.y+START
         
         if debugDraw:
-            print( "D: %d ( %3d, %3d ), (%3d, %3d), (%3d, %3d)" % (self.karel.direction,x1,y1,x2,y2,x3,y3))
+            print( "K: %d ( %3d, %3d ), (%3d, %3d), (%3d, %3d)" % (self.karel.direction,x1,y1,x2,y2,x3,y3))
         self.display.triangle( x1, y1, x2, y2, x3, y3 )
         
     def drawBalls( self ):
         for ball in self.balls:
             self.display.set_pen( self.ballpen )
-            self.display.circle( ball.x, ball.x, BALLSIZE )
+            self.display.circle( ball.x, ball.y, BALLSIZE )
             
     def drawBackground( self ):
         self.display.set_pen( self.background )
@@ -172,6 +188,39 @@ class World:
         board.move()
         if board.ballsPresent():
             board.takeBall()
+            
+    def executeCommand( self, cmd ):
+        if cmd.cmd == CMD_MOVE:
+            self.move()
+        elif cmd.cmd == CMD_TURNRIGHT:
+            self.turnRight()
+        elif cmd.cmd == CMD_TURNLEFT:
+            self.turnLeft()
+        elif cmd.cmd == CMD_DROPBALL:
+            self.dropBall()
+        elif cmd.cmd == CMD_TAKEBALL:
+            self.takeBall()
+        elif cmd.cmd == CMD_WHILE:
+            self.whileCmd(cmd)
+        else:
+            print( f"Command {cmd} not implemented!" )
+            
+    def executeCondition( self, cmd ):
+        if cmd.cmd == CMD_FRONTCLEAR:
+            return self.frontIsClear()
+        else:
+            print( f"Command {cmd} has not been implemented yet!" )
+            
+    def executeProgram(self):
+        if self.program is None:
+            raise Exception( "No program defined!" )
+        else:
+            for cmd in self.program:
+                self.executeCommand( cmd )
+
+            
+    def setupProgram( self, program ):
+        self.program = program
 
     def handleCrash(self, e):
         self.display.set_pen( self.background )
@@ -205,6 +254,16 @@ class World:
     # 
     def turnRight(self):
         self.karel.turnRight()
+        self.drawBoard()
+        time.sleep(1)
+    
+    #
+    # turnLeft - Called when we want to turn Karel.  This function simply tells karel to turn, and
+    #            then we draw karel in the world and sleep for a little
+    #            
+    #
+    def turnLeft(self):
+        self.karel.turnLeft()
         self.drawBoard()
         time.sleep(1)
         
@@ -278,14 +337,55 @@ class World:
     # 
     def noBallsPresent(self):
         return not self.ballsPresent()
-        
-try:
-    karel = Karel(NORTH)
-    board = World(karel)
-    board.testKarel()
     
-except Exception as e:
-    board.handleCrash( e )
+    #
+    # whileCmd - A while loop.  While the condition we hit is true, continue until it is false
+    #
+    def whileCmd(self,whileLoop):
+        for cmd in whileLoop:
+            if debugWhile:
+                print( cmd )
+            if( cmd.loopCondition ):
+                result = self.executeCondition( cmd )
+                if result == False:
+                    break
+            else:
+                self.executeCommand( cmd )        
+
+#
+# setupWorld - Setup everything we need to run Karel in his world
+#
+def setupWorld():
+    try:
+        karel = Karel(NORTH)
+        board = World(karel)
+        program = Program( "command.txt" )
+        board.setupProgram( program )
+        return board
+        
+    except Exception as e:
+        print( e )
+
+#
+# Execute the program!
+#
+def executeProgram(board):
+    try:
+        #board.testKarel()
+        board.executeProgram()
+    
+    except Exception as e:
+        board.handleCrash( e )
+
+#
+#
+#
+board = setupWorld()
+if not board is None:
+    executeProgram(board)
+
+
+
     
 
         
