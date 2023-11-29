@@ -1,0 +1,24 @@
+#
+# Make a square of balls, and then take them away!
+#
+#function fred {
+#    if rigthIsClear {
+#        turnRight
+#    }
+#}
+
+for var in range(8) {
+    if rightIsClear {
+        turnRight
+    }
+
+    while frontIsClear {
+        move
+        if noBallsPresent {
+            dropBall
+        }
+        else {
+            takeBall
+        }
+    }
+}
