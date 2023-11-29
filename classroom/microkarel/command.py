@@ -1,5 +1,7 @@
 import sys
-#from karelcmds import *
+from parser import Parser
+
+debugFile = False
 debugCmds = False
 
 CMD_MOVE         = "move"
@@ -8,74 +10,161 @@ CMD_TURNLEFT     = "turnLeft"
 CMD_DROPBALL     = "dropBall"
 CMD_TAKEBALL     = "takeBall"
 CMD_FRONTCLEAR   = "frontIsClear"
-CMD_WHILE        = "while"
-CMD_END          = "end"
 CMD_FRONTBLOCKED = "frontIsBlocked"
+CMD_LEFTCLEAR    = "leftIsClear"
+CMD_LEFTBLOCKED  = "leftIsBlocked"
+CMD_RIGHTCLEAR   = "rightIsClear"
+CMD_RIGHTBLOCKED = "rightIsBlocked"
+CMD_FACINGNORTH  = "facingNorth"
+CMD_FACINGEAST   = "facingEast"
+CMD_FACINGSOUTH  = "facingSouth"
+CMD_FACINGWEST   = "facingWest"
+CMD_WHILE        = "while"
+CMD_END          = "}"
 CMD_BALLSPRESENT = "ballsPresent"
 CMD_NOBALLS      = "noBallsPresent"
 CMD_FOR          = "for"
+CMD_RANGE        = "range"
+CMD_IF           = "if"
+CMD_ELSE         = "else"
+CMD_FUNCTION     = "function"
 
 #
-#
+# Instruction - Class that contains an specific command, and if
+#               that command is capable, contains nested commands
 #
 class Instruction:
     def __init__(self,line,cmd,condition=False,loop=False):
         self.linenum       = line
         self.cmd           = cmd
         self.index         = 0
+        self.range         = 0
         self.condition     = condition
         self.loopCondition = loop
         self.isLoop        = False
         self.instructions  = []
+        self.elseCmds      = []
+        self.skipCond      = False
+        self.executeElse   = False
 
+    #
+    # reportProblem - Report an error to the debug console
+    #
     def reportProblem(self,message):
         print( "Error on line %d, error is %s"%(self.linenum,message))
         
+    #
+    # getCmd - Get the instruction name
+    #
     def getCmd(self):
         return self.cmd
     
+    #
+    # __repr__ - Display the object when asked
+    #
     def __repr__(self):
         return f"{self.linenum}:{self.cmd}:{self.condition}:{self.loopCondition}"
     
+    #
+    # __str__ - test to display when we convert this object to a string
+    #
     def __str__(self):
         return f"{self.linenum}:{self.cmd}"
     
+    #
+    # __iter__ - For those instructions that contain sub-instructions,
+    #            make sure we can iterate over them.
+    #
     def __iter__(self):
-        self.index = 0
+        if self.skipCond:
+            self.index = 1
+        else:
+            self.index = 0
         self.parent = self
         return self
     
+    #
+    # __next__ - Obtain the next item we are processing when dealing
+    #            with an iterator
+    #
     def __next__(self):
-        if self.index >= len(self.instructions):
+        if self.executeElse:
+            cmds = self.elseCmds
+        else:
+            cmds = self.instructions
+        
+        if self.index >= len(cmds):
             if self.isLoop:
                 self.index = 0
             else:
                 raise StopIteration
                     
-        cmd = self.instructions[self.index]
+        cmd = cmds[self.index]
         if self.index == 0:
             cmd.condition = True
         self.index += 1
         return cmd
+    
+    #
+    # getFirst - Obtain the first sub-instruction from an instruction
+    #            that contains sub-instructions...
+    #            Hacky way to support if/else
+    #
+    def getFirst(self):
+        cmd = self.instructions[0]
+        self.skipCond = True
+        return cmd
+    
+    #
+    # switchToElse - Switch to the secondary ELSE portion of an IF
+    #
+    def switchToElse(self):
+        self.executeElse = True
+        self.index       = 0
+        self.skipCond    = False
+       
 #
-#
+# Program - The program.  A program consists of a number of instructions,
+#           some of those instructions contain sub-instructions.  While
+#           not the best way to do this, it does allow for a single pass
+#           read and convert of the file, as well as eliminating jumps etc.
 #
 class Program:
     def __init__(self, filename ):
         self.filename = filename
-        self.instructions = []
-        self.index   = 0
-        self.cmdList = [CMD_MOVE,CMD_TURNRIGHT,CMD_TURNLEFT,CMD_DROPBALL,CMD_TAKEBALL,
-                        CMD_FRONTCLEAR,CMD_WHILE,CMD_END,CMD_FRONTBLOCKED,CMD_BALLSPRESENT,CMD_NOBALLS]
-        self.cmdCond = [CMD_FRONTCLEAR,CMD_FRONTBLOCKED,CMD_BALLSPRESENT,CMD_NOBALLS]
-        self.cmdLoop = [CMD_WHILE, CMD_FOR]
+        self.cmdList   = [CMD_MOVE,CMD_TURNRIGHT,CMD_TURNLEFT,
+                          CMD_DROPBALL,CMD_TAKEBALL,
+                          CMD_FRONTCLEAR,CMD_FRONTBLOCKED,
+                          CMD_LEFTCLEAR,CMD_LEFTBLOCKED,
+                          CMD_RIGHTCLEAR,CMD_RIGHTBLOCKED,
+                          CMD_BALLSPRESENT, CMD_NOBALLS,
+                          CMD_FACINGNORTH, CMD_FACINGEAST,CMD_FACINGSOUTH,CMD_FACINGWEST,
+                          CMD_WHILE,CMD_FOR,CMD_END,CMD_FUNCTION,
+                          CMD_IF,CMD_ELSE,CMD_RANGE]
+        self.cmdCond   = [CMD_FRONTCLEAR,CMD_FRONTBLOCKED,CMD_BALLSPRESENT,CMD_NOBALLS]
+        self.cmdLoop   = [CMD_WHILE, CMD_FOR]
+        self.cmdBranch = [CMD_IF,CMD_ELSE]
+        self.stack     = []
         self.createProgram()
-
         
+    #
+    # reset - Reset instructions
+    #
+    def reset( self ):
+        self.instructions = []
+        self.index        = 0
+    #
+    # __iter__ - Setup the iterator for walking the instructions of a program
+    #
     def __iter__(self):
         self.index = 0
         return self
         
+    #
+    # __next__ - Fetch the next instruction within an iterator.  When we
+    #            step outside of the instruction set, raise the StopIteration
+    #            Exception so python knows we are done iterating
+    #
     def __next__(self):
         if self.index < len(self.instructions):
             cmd = self.instructions[self.index]
@@ -85,7 +174,8 @@ class Program:
             raise StopIteration
         
     #
-    #
+    # isValidInstruction - Determine if the passed in command is a valid
+    #                      instruction or not.
     #
     def isValidInstruction( self, cmd ):
         if cmd in self.cmdList:
@@ -93,88 +183,114 @@ class Program:
         return False
     
     #
-    # 
+    # isCommandConditional - Determine if the command given is a conditional
+    #                        operator or not.
     #
     def isCommandConditional( self, cmd ):
         if cmd in self.cmdCond:
             return True
         return False
     
+    #
+    # isCommandLoop - Is this command some kind of looping instruction?
+    #
     def isCommandLoop( self, cmd ):
         if cmd in self.cmdLoop:
             return True
         return False
     
     #
-    # readFile - Open the instruction file and read the information in, make sure that
-    # we create the array of instructions for translation.
+    # isBranch - Is this command a branching instruction?
     #
-    def readFile(self):
-        file = open( self.filename, "r" )
-        lines = []
-        while True:
-            line = file.readline()
-
-            if not line:
-                break
-            
-            line = line.lstrip()
-            line = line.rstrip()
-            if self.isComment( line ):
-                lines.append(line)
-            else:
-                temp = line.split()
-                for x in temp:
-                    lines.append(x)
-        
-        print( lines )
-        file.close()
-        return lines
-    
-    #
-    #
-    #
-    def isComment(self,line):
-        if len(line) <= 0:
-            return True
-        if line[0] == '#':
+    def isBranch( self, cmd ):
+        if cmd in self.cmdBranch:
             return True
         return False
-    
+              
     #
+    # createProgram - Read in the data file and create the instructions.
     #
+    # This code has a number of special cases that probably should be
+    # eliminator or reduced.  The special cases all revolve around conditional
+    # based instructions:
+    #
+    #     while <condition>
+    #     for <condition>
+    #     if <condition>
+    #
+    # Would be better if the "if" case was modified to separate the conditional
+    # from the rest body of the if/else.  This way the code to implement the
+    # execution of the if could simply run the conditional, and based on the
+    # result, execute the "true" or the "false" result.
     #
     def createProgram(self):
-        lines = self.readFile()
-        linenum = 0
-        self.instructions = []
-        current = self.instructions
-        loopCond = False
+        self.reset()       # Reset the instruction storage!
+        
+        parser    = Parser()
+        lines     = parser.parse( self.filename )
+        if debugFile:
+            for item in lines:
+                print( item )
+        linenum   = 0
+        current   = self.instructions
+        loopCond  = False
         Condition = False
+        lastCmd   = None
+        lastIf    = None
+        sameLine  = False
         for line in lines:
-            if loopCond == False:
+            if sameLine == False:
                 linenum += 1
-                
-            if self.isComment(line):
+            
+            if len(line) == 0:
                 continue
             
             if debugCmds: print( f"{linenum} : {line}" )
+
+            if lastCmd and (lastCmd.cmd == CMD_FOR) and (line != CMD_RANGE):
+                raise Exception( f"Invalid condition after FOR, line {linenum}:{line}" )
+                
+            if lastCmd and (lastCmd.cmd == CMD_RANGE):
+                if debugCmds: print( "Set range to {line}" )
+                lastCmd.range = int(line)
+                lastCmd = None
+                sameLine = False
+                continue
             
             if self.isValidInstruction( line ):
                 if line == CMD_END:
-                    current = self.instructions
-                    if debugCmds:
-                        print( "Reset Current : " + str( current ))
+                    current = self.stack.pop()
+                    if debugCmds: print( "Stack depth is " + str(len(self.stack)))
                 else:
-                    current.append( Instruction( linenum, line, loop=loopCond  ) )
+                    lastCmd = Instruction( linenum, line, loop=loopCond )
+                    current.append( lastCmd )
             else:
                 raise Exception( f"Invalid Instruction in file \"{self.filename}\" line {linenum}:{line}" )
             
             loopCond = False
+            sameLine = False
             if self.isCommandConditional( line ):
                 current[-1].condition = True
             if self.isCommandLoop( line ):
                 current[-1].isLoop = True
+                self.stack.append(current)
+                if debugCmds: print( "Stack depth = " + str(len(self.stack)))
                 current = current[-1].instructions
                 loopCond = True
-                
+                sameLine = True
+            if line == CMD_RANGE:
+                sameLine = True
+            if line == CMD_IF:
+                self.stack.append(current)
+                if debugCmds: print( "Stack depth = " + str(len(self.stack)))
+                current = current[-1].instructions
+                lastIf = lastCmd
+                sameLine = True
+            if line == CMD_ELSE:
+                if lastIf:
+                    self.stack.append(current)
+                    if debugCmds: print( "Stack depth = " + str(len(self.stack)))
+                    current = lastIf.elseCmds
+                    lastIf = None
+                else:
+                    raise Exception( f"Else with no IF in file \"{self.filename}\" line {linenum}:{line}" )
