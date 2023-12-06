@@ -9,8 +9,7 @@
 # programming world could be created, and created on a tiny little display
 # running on a Raspberry Pi PICO.
 #
-# Author: Mr. Curless
-# 
+# Author: Jeff Curless
 # Written for STEM night
 #
 import time
@@ -297,6 +296,8 @@ class World:
             self.ifCmd(cmd)
         elif cmd.cmd == CMD_ELSE:
             self.elseCmd(cmd)
+        elif cmd.cmd == CMD_FUNCTION:
+            self.functionCmd(cmd)
         else:
             print( f"Command {cmd} not implemented!" )
         time.sleep(0.1)
@@ -619,6 +620,16 @@ class World:
     #
     def elseCmd( self, elseBody ):
         pass
+    
+    #
+    # functionCmd - Execute the function command...
+    #
+    def functionCmd( self, funcBody):
+        if funcBody.isDefinition:
+            funcBody.isDefinition = False
+        else:
+            for cmd in funcBody:
+                self.executeCommand( cmd )
 
 #
 # setupWorld - Setup everything we need to run Karel in his world
@@ -660,3 +671,4 @@ def main():
         executeProgram(board)
 
 main()
+time.sleep(10)

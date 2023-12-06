@@ -1,3 +1,10 @@
+#
+# Parser class - This code reads in the data file and converts it into
+# something we can handle.  All syntax checking is to be done here.
+#
+# Note at the moment this is basically a place holder for later actual good
+# syntax checking...
+# 
 
 class Parser:
     #
