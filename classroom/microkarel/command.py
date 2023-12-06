@@ -46,6 +46,8 @@ class Instruction:
         self.elseCmds      = []
         self.skipCond      = False
         self.executeElse   = False
+        self.funcName      = ""
+        self.isDefinition  = False
 
     #
     # reportProblem - Report an error to the debug console
@@ -144,6 +146,8 @@ class Program:
         self.cmdCond   = [CMD_FRONTCLEAR,CMD_FRONTBLOCKED,CMD_BALLSPRESENT,CMD_NOBALLS]
         self.cmdLoop   = [CMD_WHILE, CMD_FOR]
         self.cmdBranch = [CMD_IF,CMD_ELSE]
+        self.cmdFunct  = [CMD_FUNCTION]
+        self.userFuncs = []
         self.stack     = []
         self.createProgram()
         
@@ -206,7 +210,32 @@ class Program:
         if cmd in self.cmdBranch:
             return True
         return False
-              
+    
+    #
+    # isCommandFunction - Is the command a function (lamba or whatever)
+    #
+    def isCommandFunction( self, cmd ):
+        if cmd in self.cmdFunct:
+            return True
+        return False
+    
+    #
+    # isUserFunction - 
+    #
+    def isUserFunction( self, cmd ):
+        if cmd in self.userFuncs:
+            return True
+        return False
+    
+    #
+    #
+    #
+    def FindUserFunction( self, linenum, line, loop ):
+        for cmd in self.instructions:
+            if cmd.cmd == CMD_FUNCTION:
+                if cmd.funcName == line:
+                    return cmd
+        raise Exception( f"Calling an undefined function: {line}" )
     #
     # createProgram - Read in the data file and create the instructions.
     #
@@ -238,6 +267,7 @@ class Program:
         lastCmd   = None
         lastIf    = None
         sameLine  = False
+        haveFunction = False
         for line in lines:
             if sameLine == False:
                 linenum += 1
@@ -264,6 +294,17 @@ class Program:
                 else:
                     lastCmd = Instruction( linenum, line, loop=loopCond )
                     current.append( lastCmd )
+            elif haveFunction:
+                if debugCmds: print( f"Defined function: {line}" )
+                lastCmd.funcName = line
+                self.userFuncs.append(line)
+                haveFunction = False
+                sameLine = False
+                continue
+            elif self.isUserFunction( line ):
+                if debugCmds: print( f"User calling function: {line}" )
+                lastCmd = self.FindUserFunction( linenum, line, loop=loopCond)
+                current.append(lastCmd)
             else:
                 raise Exception( f"Invalid Instruction in file \"{self.filename}\" line {linenum}:{line}" )
             
@@ -278,6 +319,13 @@ class Program:
                 current = current[-1].instructions
                 loopCond = True
                 sameLine = True
+            if self.isCommandFunction( line ):
+                lastCmd.isDefinition = True
+                self.stack.append(current)
+                if debugCmds: print( "Stack depth = " + str(len(self.stack)))
+                current = current[-1].instructions
+                sameLine = True
+                haveFunction = True
             if line == CMD_RANGE:
                 sameLine = True
             if line == CMD_IF:

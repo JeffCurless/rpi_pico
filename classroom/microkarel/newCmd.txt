@@ -1,24 +1,35 @@
 #
 # Make a square of balls, and then take them away!
 #
-#function fred {
-#    if rigthIsClear {
-#        turnRight
-#    }
-#}
 
+#
+# Turn Karel to the right it the right is clear...
+#
+function turnIfClear() {
+    if rightIsClear() {
+        turnRight()
+    }
+}
+
+#
+# Spin Karel around 4 times!
+#
+for var in range(4) {
+    turnIfClear()
+}
+
+#
+# Walk around the world twice!
+#
 for var in range(8) {
-    if rightIsClear {
-        turnRight
-    }
-
-    while frontIsClear {
-        move
-        if noBallsPresent {
-            dropBall
+        turnIfClear()
+        while frontIsClear() {
+            move()
+            if noBallsPresent() {
+                dropBall()
+            }
+            else {
+                takeBall()
+            }
         }
-        else {
-            takeBall
-        }
-    }
 }
