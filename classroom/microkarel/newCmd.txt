@@ -6,8 +6,8 @@
 # Turn Karel to the right it the right is clear...
 #
 function turnIfClear() {
-    if rightIsClear() {
-        turnRight()
+   if rightIsClear() {
+       turnRight()
     }
 }
 
@@ -21,7 +21,8 @@ for var in range(4) {
 #
 # Walk around the world twice!
 #
-for var in range(8) {
+for var in range(2) {
+    for var in range(4) {
         turnIfClear()
         while frontIsClear() {
             move()
@@ -32,4 +33,5 @@ for var in range(8) {
                 takeBall()
             }
         }
+    }
 }

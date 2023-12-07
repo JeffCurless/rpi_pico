@@ -31,6 +31,7 @@ debugKarel = False
 debugBall  = False
 debugWhile = False
 debugMem   = False
+debugCode  = False
 
 #
 # Some constants that we will need
@@ -501,8 +502,8 @@ class World:
     #         ends at zero we quit.
     #
     def rangeCmd( self,cmd ):
-        cmd.range -= 1
-        if cmd.range >= 0:
+        cmd.rangeIter -= 1
+        if cmd.rangeIter >= 0:
             return True
         else:
             return False
@@ -587,7 +588,11 @@ class World:
     # In this case the one and only condition supported is "range"
     #
     def forCmd( self, forloop ):
+        firstTime = True
         for cmd in forloop:
+            if firstTime and (cmd.cmd == CMD_RANGE):
+                cmd.resetRange()
+                firstTime = False
             if cmd.loopCondition:
                 result = self.executeCondition( cmd )
                 if result == False:
@@ -640,6 +645,7 @@ def setupWorld():
         karel = Karel(NORTH)
         board = World(karel)
         program = Program( "newCmd.txt" )
+        if debugCode: program.printProgram( program.instructions)
         board.setupProgram( program )
         return board
         
