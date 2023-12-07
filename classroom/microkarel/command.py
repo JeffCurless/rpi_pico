@@ -39,6 +39,7 @@ class Instruction:
         self.cmd           = cmd
         self.index         = 0
         self.range         = 0
+        self.rangeIter     = 0
         self.condition     = condition
         self.loopCondition = loop
         self.isLoop        = False
@@ -124,6 +125,12 @@ class Instruction:
         self.executeElse = True
         self.index       = 0
         self.skipCond    = False
+        
+    #
+    # Set the rangeIterator to the value of range
+    #
+    def resetRange(self):
+        self.rangeIter = self.range
        
 #
 # Program - The program.  A program consists of a number of instructions,
@@ -281,7 +288,7 @@ class Program:
                 raise Exception( f"Invalid condition after FOR, line {linenum}:{line}" )
                 
             if lastCmd and (lastCmd.cmd == CMD_RANGE):
-                if debugCmds: print( "Set range to {line}" )
+                if debugCmds: print( f"Set range to {line}" )
                 lastCmd.range = int(line)
                 lastCmd = None
                 sameLine = False
@@ -342,3 +349,16 @@ class Program:
                     lastIf = None
                 else:
                     raise Exception( f"Else with no IF in file \"{self.filename}\" line {linenum}:{line}" )
+    #
+    #
+    #
+    def printProgram( self, cmds, indent=0 ):
+        for cmd in cmds:
+            out = " " * indent
+            if cmd.cmd == CMD_FOR:
+                print( f"{out}{cmd.cmd} var in " )
+                self.printProgram( cmd.instructions, indent+4 )
+            elif cmd.cmd == CMD_RANGE:
+                print( f"{out}{cmd.cmd} {cmd.range}" )
+            else:
+                print( f"{out}{cmd.cmd}" )
