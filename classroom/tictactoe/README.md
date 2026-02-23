@@ -29,14 +29,6 @@ Same game with an unbeatable pattern-based AI.
 - **Priority:** win > block opponent > pattern match > random fallback
 - **RGB LED feedback:** blue = pattern matched, red = random move taken
 
-### battery.py
-
-Standalone battery voltage monitor for Pico Display 2.0.
-
-- Reads ADC on Pin 29 to measure battery voltage
-- Maps voltage to charge percentage: 2.8 V = 0%, 4.2 V = 100%
-- Displays "Charging!" if Pin 24 reads high (USB power detected)
-
 ## Parent
 
 See [classroom/](../README.md) for other classroom projects.
